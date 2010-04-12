@@ -1,0 +1,115 @@
+diff --git a/Build.PL b/Build.PL
+index 086f369..26ce471 100644
+--- a/Build.PL
++++ b/Build.PL
+@@ -26,10 +26,13 @@ Local::Games::FrozenBubble::Build->new(
+     ],
+     configure_requires => {
+         perl                => '5.008',
++        autodie             => 0,
+         'Alien::SDL'        => '1.1',
+         Config              => 0,
+         'Devel::CheckLib'   => '0.6',
+         'ExtUtils::ParseXS' => '2.16',
++        'File::Basename'    => 0,
++        'File::Spec::Functions' => 0,
+         'IO::File'          => 0,
+         'Module::Build'     => '0.36',    # for share_dir
+     },
+diff --git a/inc/Local/Games/FrozenBubble/Build.pm b/inc/Local/Games/FrozenBubble/Build.pm
+index 75a35b9..458f54d 100644
+--- a/inc/Local/Games/FrozenBubble/Build.pm
++++ b/inc/Local/Games/FrozenBubble/Build.pm
+@@ -2,18 +2,27 @@ package Local::Games::FrozenBubble::Build;
+ use 5.008;
+ use strict;
+ use warnings FATAL => 'all';
+-use Alien::SDL qw();
++use autodie qw(:all);
++use File::Basename qw(fileparse);
++use File::Spec::Functions qw(catdir catfile rootdir);
+ use IO::File qw();
+ use Module::Build '0.36' => qw();
+ use parent 'Module::Build';
+ 
++sub ACTION_build {
++    my ($self) = @_;
++    $self->depends_on('messages');
++    $self->SUPER::ACTION_build;
++    return;
++}
++
+ sub ACTION_symbols {
+     my ($self) = @_;
+     {
+-        my $out = IO::File->new('lib/Games/FrozenBubble/Symbols.pm', 'w');
++        my $out = IO::File->new(catfile(qw(lib Games FrozenBubble Symbols.pm)), 'w');
+         $out->print("package Games::FrozenBubble::Symbols;\n\@syms = qw(");
+         {
+-            my $in = IO::File->new('/usr/include/SDL/SDL_keysym.h', 'r');
++            my $in = IO::File->new(catfile(rootdir, qw(usr include SDL SDL_keysym.h)), 'r');
+             while (defined($_ = $in->getline)) {
+                 $out->print("$1 ") if /SDLK_(\S+)/;
+             }
+@@ -23,4 +32,18 @@ sub ACTION_symbols {
+     return;
+ }
+ 
++sub ACTION_messages {
++    my ($self) = @_;
++    my $pot = catfile(qw(share locale frozen-bubble.pot));
++    unlink $pot;
++    system "xgettext --keyword=t --language=perl --default-domain=frozen-bubble --from-code=UTF-8 -o $pot bin/frozen-bubble";
++    for (glob(catfile(qw(share locale), '*.po'))) {
++        system qq(msgmerge -q "$_" "$pot" > "${_}t");
++        rename "${_}t", $_;
++        my $mo = catfile(@{[fileparse($_, qr/\.po \z/msx)]}[1, 0]) . '.mo';
++        system qq(msgfmt "$_" -o "$mo");
++    }
++    return;
++}
++
+ 1;
+diff --git a/share/locale/Makefile b/share/locale/Makefile
+deleted file mode 100644
+index 896d995..0000000
+--- a/share/locale/Makefile
++++ /dev/null
+@@ -1,37 +0,0 @@
+-include ../settings.mk
+-
+-PGOAL = frozen-bubble
+-
+-# files to search translatable strings in
+-PL_FILES = ../frozen-bubble
+-
+-POFILES = $(wildcard *.po)
+-MOFILES = $(POFILES:%.po=%.mo)
+-
+-all: $(MOFILES)
+-
+-$(PGOAL).pot: $(PL_FILES)
+-	rm -f $@
+-	xgettext --keyword=t --language=perl --default-domain=frozen-bubble --from-code=UTF-8 -o $@ $(PL_FILES)
+-
+-merge: $(PGOAL).pot
+-	@for n in $(POFILES); do \
+-		echo "Merging $$n"; \
+-		msgmerge "$$n" $< > "$$n"t; \
+-		mv -f "$$n"t "$$n"; \
+-	done
+-
+-%.mo: %.po
+-	msgfmt $< -o $@
+-
+-install: $(MOFILES)
+-	install -d $(DESTDIR)$(LOCALEDIR)
+-	@for n in $(MOFILES); do \
+-		echo install $$n $(DESTDIR)$(LOCALEDIR)/`echo $$n | sed -e 's/.mo//'`/LC_MESSAGES/frozen-bubble.mo; \
+-		install -d $(DESTDIR)$(LOCALEDIR)/`echo $$n | sed -e 's/.mo//'`; \
+-		install -d $(DESTDIR)$(LOCALEDIR)/`echo $$n | sed -e 's/.mo//'`/LC_MESSAGES; \
+-		install -m 0644 $$n $(DESTDIR)$(LOCALEDIR)/`echo $$n | sed -e 's/.mo//'`/LC_MESSAGES/frozen-bubble.mo; \
+-	done
+-
+-clean:
+-	@rm -rf *.mo

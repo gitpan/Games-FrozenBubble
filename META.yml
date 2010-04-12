@@ -1,0 +1,72 @@
+---
+abstract: 'Puzzle with Bubbles'
+author: []
+build_requires:
+  ExtUtils::CBuilder: 0
+  IO::File: 0
+  IPC::System::Simple: 0
+  Locale::Maketext::Extract: 0
+  SDL: 2.4
+  autodie: 0
+configure_requires:
+  Alien::SDL: 1.1
+  Config: 0
+  ExtUtils::ParseXS: 2.16
+  File::Basename: 0
+  File::Spec::Functions: 0
+  IO::File: 0
+  Locale::Maketext::Extract: 0
+  Module::Build: 0.36
+  SDL: 2.4
+  autodie: 0
+  perl: 5.008
+dynamic_config: 1
+generated_by: 'Module::Build version 0.3603'
+license: gpl2
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Games-FrozenBubble
+provides:
+  Games::FrozenBubble:
+    file: lib/Games/FrozenBubble.pm
+    version: 0.001_1
+  Games::FrozenBubble::CStuff:
+    file: lib/Games/FrozenBubble/CStuff.pm
+  Games::FrozenBubble::Config:
+    file: lib/Games/FrozenBubble/Config.pm
+  Games::FrozenBubble::LevelEditor:
+    file: lib/Games/FrozenBubble/LevelEditor.pm
+  Games::FrozenBubble::MDKCommon:
+    file: lib/Games/FrozenBubble/MDKCommon.pm
+  Games::FrozenBubble::Net:
+    file: lib/Games/FrozenBubble/Net.pm
+  Games::FrozenBubble::NetDiscover:
+    file: lib/Games/FrozenBubble/NetDiscover.pm
+  Games::FrozenBubble::Stuff:
+    file: lib/Games/FrozenBubble/Stuff.pm
+  Games::FrozenBubble::Symbols:
+    file: lib/Games/FrozenBubble/Symbols.pm
+requires:
+  Carp: 0
+  Data::Dumper: 0
+  DynaLoader: 0
+  Errno: 0
+  Fcntl: 0
+  File::ShareDir: 1.00
+  Getopt::Long: 0
+  IO::File: 0
+  IO::Select: 0
+  IO::Socket: 0
+  Locale::Maketext::Simple: 0
+  Math::Trig: 0
+  POSIX: 0
+  SDL: v1.19.0
+  Time::HiRes: 0
+  parent: 0
+  perl: 5.008
+resources:
+  bugtracker: http://github.com/kthakore/frozen-bubble/issues
+  license: http://opensource.org/licenses/gpl-2.0.php
+  repository: http://github.com/kthakore/frozen-bubble
+version: 0.001_1
