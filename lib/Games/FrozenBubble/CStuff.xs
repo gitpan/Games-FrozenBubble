@@ -47,13 +47,19 @@ const int ANIM_SPEED = 20;
 Uint32 ticks;
 Uint32 to_wait;
 
+#define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
+
 void set_pixel(SDL_Surface * s, int x, int y, Uint8 r, Uint8 g, Uint8 b, Uint8 a) // only 32bit surfaces yet
 {
 	((Uint32 *)s->pixels)[x + y * s->w] = (((r >> s->format->Rloss) << s->format->Rshift) & s->format->Rmask)
 	                                    | (((g >> s->format->Gloss) << s->format->Gshift) & s->format->Gmask)
 	                                    | (((b >> s->format->Bloss) << s->format->Bshift) & s->format->Bmask)
 	                                    | (((a >> s->format->Aloss) << s->format->Ashift) & s->format->Amask);
+}
 
+void get_pixel(SDL_Surface * s, int x, int y, Uint8 *r, Uint8 *g, Uint8 *b, Uint8 *a)
+{
+	SDL_GetRGBA(((Uint32 *)s->pixels)[CLAMP(x, 0, s->w) + CLAMP(y, 0, s->h) * s->w], s->format, r, g, b, a);
 }
 
 void myLockSurface(SDL_Surface * s)
@@ -165,23 +171,21 @@ void bars_effect(SDL_Surface * s, SDL_Surface * img)
 	int bpp = img->format->BytesPerPixel;
 	const int bars_max_steps = 40;
 	const int bars_num = 16;
-
-	for (i=0; i<bars_max_steps; i++) {
-
+	for (i=0; i<bars_max_steps; i++)
+	{
 		synchro_before(s);
-
-		for (y=0; y<YRES/bars_max_steps; y++) {
+		for (y=0; y<YRES/bars_max_steps; y++)
+		{
 			int y_  = (i*YRES/bars_max_steps + y) * img->pitch;
 			int y__ = (YRES - 1 - (i*YRES/bars_max_steps + y)) * img->pitch;
-
-			for (j=0; j<bars_num/2; j++) {
+			for (j=0; j<bars_num/2; j++)
+			{
 				int x_ =    (j*2) * (XRES/bars_num) * bpp;
 				int x__ = (j*2+1) * (XRES/bars_num) * bpp;
 				memcpy(s->pixels + y_ + x_,   img->pixels + y_ + x_,   (XRES/bars_num) * bpp);
 				memcpy(s->pixels + y__ + x__, img->pixels + y__ + x__, (XRES/bars_num) * bpp);
 			}
 		}
-
 		synchro_after(s);
 	}
 }
@@ -214,7 +218,7 @@ void squares_effect(SDL_Surface * s, SDL_Surface * img)
 
 		still_moving = 0;
 		for (j=i; j>=0; j--) {
-			if (fillrect(j, k, s ,img, squares_size, bpp))
+			if (fillrect(j, k, s ,img, bpp, squares_size))
 				still_moving = 1;
 			k++;
 		}
@@ -412,7 +416,6 @@ void plasma_effect(SDL_Surface * s, SDL_Surface * img)
 	}
 }
 
-
 void shrink_(SDL_Surface * dest, SDL_Surface * orig, int xpos, int ypos, SDL_Rect * orig_rect, int factor)
 {
 	int bpp = dest->format->BytesPerPixel;
@@ -428,28 +431,32 @@ void shrink_(SDL_Surface * dest, SDL_Surface * orig, int xpos, int ypos, SDL_Rec
 		for (y=ry; y<ry+rh; y++) {
 			if (!dest->format->palette) {
 				/* there is no palette, it's cool, I can do (uber-slow) high-quality shrink */
-				Uint32 pixelvalue; /* this should also be okay for 16-bit and 24-bit formats */
-				int r = 0; int g = 0; int b = 0;
+				int r = 0;
+				int g = 0;
+				int b = 0;
+				int a = 0;
+				Uint8 r_, g_, b_ , a_;
 				for (i=0; i<factor; i++) {
 					for (j=0; j<factor; j++) {
-						pixelvalue = 0;
-						memcpy(&pixelvalue, orig->pixels + (x*factor+i)*bpp + (y*factor+j)*orig->pitch, bpp);
-						r += (pixelvalue & orig->format->Rmask) >> orig->format->Rshift;
-						g += (pixelvalue & orig->format->Gmask) >> orig->format->Gshift;
-						b += (pixelvalue & orig->format->Bmask) >> orig->format->Bshift;
+						SDL_GetRGBA(((Uint32 *)orig->pixels)[CLAMP(x*factor+i, 0, orig->w) +  CLAMP(y*factor+j, 0, orig->h) * orig->w], 
+						            orig->format, &r_, &g_, &b_, &a_);
+						r += r_;
+						g += g_;
+						b += b_;
+						a += a_;
 					}
 				}
-				pixelvalue =
-					((r/(factor*factor)) << orig->format->Rshift) +
-					((g/(factor*factor)) << orig->format->Gshift) +
-					((b/(factor*factor)) << orig->format->Bshift);
-				memcpy(dest->pixels + (xpos+x)*bpp + (ypos+y)*dest->pitch, &pixelvalue, bpp);
-			} else {
-				/* there is a palette... I don't care of the bloody oldskoolers who still use
-				   8-bit displays & al, they can suffer and die ;p */
+				r /= factor*factor;
+				g /= factor*factor;
+				b /= factor*factor;
+				a /= factor*factor;
+				set_pixel(dest, CLAMP(xpos+x, 0, dest->w), CLAMP(ypos+y, 0, dest->h), (Uint8)r, (Uint8)g, (Uint8)b, (Uint8)a);
+			}/* else {
+				// there is a palette... I don't care of the bloody oldskoolers who still use
+				//   8-bit displays & al, they can suffer and die ;p
 				memcpy(dest->pixels + (xpos+x)*bpp + (ypos+y)*dest->pitch,
 				       orig->pixels + (x*factor)*bpp + (y*factor)*orig->pitch, bpp);
-			}
+			}*/
 		}
 	}
 	myUnlockSurface(orig);
@@ -484,7 +491,6 @@ void rotate_nearest_(SDL_Surface * dest, SDL_Surface * orig, double angle)
 	myUnlockSurface(dest);
 }
 
-#define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 #define getr(pixeladdr) ( *( ( (Uint8*) pixeladdr ) + Rdec ) )
 #define getg(pixeladdr) ( *( ( (Uint8*) pixeladdr ) + Gdec ) )
 #define getb(pixeladdr) ( *( ( (Uint8*) pixeladdr ) + Bdec ) )
@@ -493,65 +499,71 @@ void rotate_nearest_(SDL_Surface * dest, SDL_Surface * orig, double angle)
 void rotate_bilinear_(SDL_Surface * dest, SDL_Surface * orig, double angle)
 {
 	int Bpp = dest->format->BytesPerPixel;
-        Uint32 *ptr;
-        int x_, y_;
-        int r, g, b;
-        double a;
-        double dx, dy;
-        double cosval = cos(angle);
-        double sinval = sin(angle);
-	if (orig->format->BytesPerPixel != 4) {
-                fprintf(stderr, "rotate_bilinear: orig surface must be 32bpp\n");
-                abort();
-        }
-	if (dest->format->BytesPerPixel != 4) {
-                fprintf(stderr, "rotate_bilinear: dest surface must be 32bpp\n");
-                abort();
-        }
+	int x_, y_;
+	int r, g, b;
+	double a;
+	double dx, dy;
+	double cosval = cos(angle);
+	double sinval = sin(angle);
+	Uint8 Ar, Ag, Ab, Aa, Br, Bg, Bb, Ba, Cr, Cg, Cb, Ca, Dr, Dg, Db, Da;
+	if (orig->format->BytesPerPixel == 1)
+	{
+		fprintf(stderr, "rotate_bilinear: orig surface must not have a palette\n");
+		abort();
+	}
+	if (dest->format->BytesPerPixel == 1)
+	{
+			fprintf(stderr, "rotate_bilinear: dest surface must not have a palette\n");
+			abort();
+	}
 	myLockSurface(orig);
 	myLockSurface(dest);
-        for (y = 0; y < dest->h; y++) {
-                double x__ = - dest->w/2*cosval - (y - dest->h/2)*sinval + dest->w/2;
-                double y__ = (y - dest->h/2)*cosval - dest->w/2*sinval + dest->h/2;
-                ptr = dest->pixels + y*dest->pitch;
-                for (x = 0; x < dest->w; x++) {
-                        Uint32 *A, *B, *C, *D;
-                        x_ = floor(x__);
-                        y_ = floor(y__);
-                        if (x_ < 0 || x_ > orig->w - 2 || y_ < 0 || y_ > orig->h - 2) {
-                                // out of band
-                                *ptr = 0;
-
-                        } else {
-                                dx = x__ - x_;
-                                dy = y__ - y_;
-                                A = orig->pixels + x_*Bpp     + y_*orig->pitch;
-                                B = orig->pixels + (x_+1)*Bpp + y_*orig->pitch;
-                                C = orig->pixels + x_*Bpp     + (y_+1)*orig->pitch;
-                                D = orig->pixels + (x_+1)*Bpp + (y_+1)*orig->pitch;
-                                a = (geta(A) * ( 1 - dx ) + geta(B) * dx) * ( 1 - dy ) + (geta(C) * ( 1 - dx ) + geta(D) * dx) * dy;
-                                if (a == 0) {
-                                        // fully transparent, no use working
-                                        r = g = b = 0;
-                                } else if (a == 255) {
-                                        // fully opaque, optimized
-                                        r = (getr(A) * ( 1 - dx ) + getr(B) * dx) * ( 1 - dy ) + (getr(C) * ( 1 - dx ) + getr(D) * dx) * dy;
-                                        g = (getg(A) * ( 1 - dx ) + getg(B) * dx) * ( 1 - dy ) + (getg(C) * ( 1 - dx ) + getg(D) * dx) * dy;
-                                        b = (getb(A) * ( 1 - dx ) + getb(B) * dx) * ( 1 - dy ) + (getb(C) * ( 1 - dx ) + getb(D) * dx) * dy;
-                                } else {
-                                        // not fully opaque, means A B C or D was not fully opaque, need to weight channels with
-                                        r = ( (getr(A) * geta(A) * ( 1 - dx ) + getr(B) * geta(B) * dx) * ( 1 - dy ) + (getr(C) * geta(C) * ( 1 - dx ) + getr(D) * geta(D) * dx) * dy ) / a;
-                                        g = ( (getg(A) * geta(A) * ( 1 - dx ) + getg(B) * geta(B) * dx) * ( 1 - dy ) + (getg(C) * geta(C) * ( 1 - dx ) + getg(D) * geta(D) * dx) * dy ) / a;
-                                        b = ( (getb(A) * geta(A) * ( 1 - dx ) + getb(B) * geta(B) * dx) * ( 1 - dy ) + (getb(C) * geta(C) * ( 1 - dx ) + getb(D) * geta(D) * dx) * dy ) / a;
-                                }
-                                * ( ( (Uint8*) ptr ) + Rdec ) = r;  // it is slightly faster to not recompose the 32-bit pixel - at least on my p4
-                                * ( ( (Uint8*) ptr ) + Gdec ) = g;
-                                * ( ( (Uint8*) ptr ) + Bdec ) = b;
-                                * ( ( (Uint8*) ptr ) + Adec ) = a;
-                        }
-                        x__ += cosval;
-                        y__ += sinval;
-                        ptr++;
+	for (y = 0; y < dest->h; y++)
+	{
+		double x__ = - dest->w/2*cosval - (y - dest->h/2)*sinval + dest->w/2;
+		double y__ = (y - dest->h/2)*cosval - dest->w/2*sinval + dest->h/2;
+		for (x = 0; x < dest->w; x++)
+		{
+			Uint32 *A, *B, *C, *D;
+			x_ = floor(x__);
+			y_ = floor(y__);
+			if (x_ < 0 || x_ > orig->w - 2 || y_ < 0 || y_ > orig->h - 2)
+			{
+				// out of band
+				set_pixel(dest, x, y, 0, 0, 0, 0);
+			}
+			else
+			{
+				dx = x__ - x_;
+				dy = y__ - y_;
+				get_pixel(orig, x_,     y_,     &Ar, &Ag, &Ab, &Aa);
+				get_pixel(orig, x_ + 1, y_,     &Br, &Bg, &Bb, &Ba);
+				get_pixel(orig, x_,     y_ + 1, &Cr, &Cg, &Cb, &Ca);
+				get_pixel(orig, x_ + 1, y_ + 1, &Dr, &Dg, &Db, &Da);
+				a = (Aa * ( 1 - dx ) + Ba * dx) * ( 1 - dy ) + (Ca * ( 1 - dx ) + Da * dx) * dy;
+				if (a == 0)
+				{
+					// fully transparent, no use working
+					r = g = b = 0;
+				}
+				else if (a == 255)
+				{
+					// fully opaque, optimized
+					r = (Ar * ( 1 - dx ) + Br * dx) * ( 1 - dy ) + (Cr * ( 1 - dx ) + Dr * dx) * dy;
+					g = (Ag * ( 1 - dx ) + Bg * dx) * ( 1 - dy ) + (Cg * ( 1 - dx ) + Dg * dx) * dy;
+					b = (Ab * ( 1 - dx ) + Bb * dx) * ( 1 - dy ) + (Cb * ( 1 - dx ) + Db * dx) * dy;
+				}
+				else
+				{
+					// not fully opaque, means A B C or D was not fully opaque, need to weight channels with
+					r = ( (Ar * Aa * ( 1 - dx ) + Br * Ba * dx) * ( 1 - dy ) + (Cr * Ca * ( 1 - dx ) + Dr * Da * dx) * dy ) / a;
+					g = ( (Ag * Aa * ( 1 - dx ) + Bg * Ba * dx) * ( 1 - dy ) + (Cg * Ca * ( 1 - dx ) + Dg * Da * dx) * dy ) / a;
+					b = ( (Ab * Aa * ( 1 - dx ) + Bb * Ba * dx) * ( 1 - dy ) + (Cb * Ca * ( 1 - dx ) + Db * Da * dx) * dy ) / a;
+				}
+				set_pixel(dest, x, y, r, g, b, a);
+			}
+			x__ += cosval;
+			y__ += sinval;
 		}
 	}
 	myUnlockSurface(orig);
@@ -1022,76 +1034,84 @@ struct point { double x; double y; double angle; };
 
 void points_(SDL_Surface * dest, SDL_Surface * orig, SDL_Surface * mask)
 {
-	int Bpp = dest->format->BytesPerPixel;
-        static struct point * points = NULL;
-        int i, amount = 200;
-	if (orig->format->BytesPerPixel != 4) {
-                fprintf(stderr, "points: orig surface must be 32bpp\n");
-                abort();
-        }
-	if (dest->format->BytesPerPixel != 4) {
-                fprintf(stderr, "points: dest surface must be 32bpp\n");
-                abort();
-        }
-	if (mask->format->BytesPerPixel != 4) {
-                fprintf(stderr, "points: mask surface must be 32bpp\n");
-                abort();
-        }
-        if (points == NULL) {
-                points = malloc(sizeof(struct point) * amount);
-                if (!points)
-                        fb__out_of_memory();
-                for (i = 0; i < amount; i++) {
-                        while (1) {
-                                points[i].x = rand_(dest->w/2) + dest->w/4;
-                                points[i].y = rand_(dest->h/2) + dest->h/4;
-                                if (* ( (Uint32*) ( mask->pixels + ((int)points[i].y)*mask->pitch + ((int)points[i].x)*mask->format->BytesPerPixel ) ) == 0xFFFFFFFF)
-                                        break;
-                        }
-                        points[i].angle = 2 * M_PI * rand() / RAND_MAX;
-                }
-        }
+	static struct point * points = NULL;
+	int i, amount = 200;
+	Uint8 r, g, b, a;
+	if (orig->format->BytesPerPixel == 1) {
+		fprintf(stderr, "points: orig surface must not have a palette\n");
+		abort();
+	}
+	if (dest->format->BytesPerPixel == 1) {
+		fprintf(stderr, "points: dest surface must not have a palette\n");
+		abort();
+	}
+	if (mask->format->BytesPerPixel == 1) {
+		fprintf(stderr, "points: mask surface must not have a palette\n");
+		abort();
+	}
+	if (points == NULL) {
+		points = malloc(sizeof(struct point) * amount);
+		if (!points)
+			fb__out_of_memory();
+		for (i = 0; i < amount; i++) {
+			while (1) {
+				points[i].x = rand_(dest->w/2) + dest->w/4;
+				points[i].y = rand_(dest->h/2) + dest->h/4;
+				SDL_GetRGBA(((Uint32 *)mask->pixels)[CLAMP((int)points[i].x, 0, mask->w) + CLAMP((int)points[i].y, 0, mask->h) * mask->w],
+				            mask->format, &r, &g, &b, &a);
+				if(r == 255 && g == 255 && b == 255)
+					break;
+			}
+			points[i].angle = 2 * M_PI * rand() / RAND_MAX;
+		}
+	}
 	myLockSurface(orig);
+	myLockSurface(mask);
 	myLockSurface(dest);
-        for (y = 0; y < dest->h; y++) {
-                memcpy(dest->pixels + y*dest->pitch, orig->pixels + y*orig->pitch, orig->pitch);
-        }
-        for (i = 0; i < amount; i++) {
-                double angle_distance = 0;
-
-                *( (Uint32*) ( dest->pixels + ((int)points[i].y)*dest->pitch + ((int)points[i].x)*Bpp ) ) = 0xFFCCCCCC;
-
-                points[i].x += cos(points[i].angle);
-                points[i].y += sin(points[i].angle);
-
-                if (* ( (Uint32*) ( mask->pixels + ((int)points[i].y)*mask->pitch + ((int)points[i].x)*mask->format->BytesPerPixel ) ) != 0xFFFFFFFF) {
-                        // get back on track
-                        points[i].x -= cos(points[i].angle);
-                        points[i].y -= sin(points[i].angle);
-                        while (1) {
-                                angle_distance += 2 * M_PI / 100;
-
-                                points[i].x += cos(points[i].angle + angle_distance);
-                                points[i].y += sin(points[i].angle + angle_distance);
-                                if (* ( (Uint32*) ( mask->pixels + ((int)points[i].y)*mask->pitch + ((int)points[i].x)*mask->format->BytesPerPixel ) ) == 0xFFFFFFFF) {
-                                        points[i].angle += angle_distance;
-                                        break;
-                                }
-                                points[i].x -= cos(points[i].angle + angle_distance);
-                                points[i].y -= sin(points[i].angle + angle_distance);
-
-                                points[i].x += cos(points[i].angle - angle_distance);
-                                points[i].y += sin(points[i].angle - angle_distance);
-                                if (* ( (Uint32*) ( mask->pixels + ((int)points[i].y)*mask->pitch + ((int)points[i].x)*mask->format->BytesPerPixel ) ) == 0xFFFFFFFF) {
-                                        points[i].angle -= angle_distance;
-                                        break;
-                                }
-                                points[i].x -= cos(points[i].angle - angle_distance);
-                                points[i].y -= sin(points[i].angle - angle_distance);
-                        }
-                }
-        }
+	for (x = 0; x < dest->w; x++) {
+		for (y = 0; y < dest->h; y++) {
+			SDL_GetRGBA(((Uint32 *)orig->pixels)[CLAMP(x, 0, orig->w) + CLAMP(y, 0, orig->h) * orig->w], orig->format, &r, &g, &b, &a);
+			set_pixel(dest, x, y, r, g, b, a);
+		}
+	}
+	for (i = 0; i < amount; i++) {
+		double angle_distance = 0;
+		set_pixel(dest, CLAMP((int)points[i].x, 0, dest->w), CLAMP((int)points[i].y, 0, dest->h), 0xFF, 0xCC, 0xCC, 0xCC);
+		points[i].x += cos(points[i].angle);
+		points[i].y += sin(points[i].angle);
+		SDL_GetRGBA(((Uint32 *)mask->pixels)[CLAMP((int)points[i].x, 0, mask->w) + CLAMP((int)points[i].y, 0, mask->h) * mask->w],
+		            mask->format, &r, &g, &b, &a);
+		if(r != 255 || g != 255 || b != 255) {
+			// get back on track
+			points[i].x -= cos(points[i].angle);
+			points[i].y -= sin(points[i].angle);
+			while (1) {
+				angle_distance += 2 * M_PI / 100;
+				points[i].x    += cos(points[i].angle + angle_distance);
+				points[i].y    += sin(points[i].angle + angle_distance);
+				SDL_GetRGBA(((Uint32 *)mask->pixels)[CLAMP((int)points[i].x, 0, mask->w) + CLAMP((int)points[i].y, 0, mask->h) * mask->w],
+				            mask->format, &r, &g, &b, &a);
+				if(r == 255 && g == 255 && b == 255) {
+					points[i].angle += angle_distance;
+					break;
+				}
+				points[i].x -= cos(points[i].angle + angle_distance);
+				points[i].y -= sin(points[i].angle + angle_distance);
+				points[i].x += cos(points[i].angle - angle_distance);
+				points[i].y += sin(points[i].angle - angle_distance);
+				SDL_GetRGBA(((Uint32 *)mask->pixels)[CLAMP((int)points[i].x, 0, mask->w) + CLAMP((int)points[i].y, 0, mask->h) * mask->w],
+				            mask->format, &r, &g, &b, &a);
+				if(r == 255 && g == 255 && b == 255) {
+					points[i].angle -= angle_distance;
+					break;
+				}
+				points[i].x -= cos(points[i].angle - angle_distance);
+				points[i].y -= sin(points[i].angle - angle_distance);
+			}
+		}
+	}
 	myUnlockSurface(orig);
+	myUnlockSurface(mask);
 	myUnlockSurface(dest);
 }
 
@@ -1432,149 +1452,151 @@ static int counter_for_new_flake = 1000;
 void snow_(SDL_Surface * dest, SDL_Surface * orig)
 {
 	int Bpp = dest->format->BytesPerPixel;
-        static struct flake * flakes = NULL;
-        int i, amount = 200;
-        double wideness = 2.0, y_speed = 0.2, moving_speed = 0.1;
-        static int new_generated = 0;
-        double a, fore_a, x_flake, y_flake, dx, dy;
-        int r, g, b, fore_r, fore_g, fore_b, back_a, x_, y_;
-        Uint8 *orig_ptr, *ptr;
-	if (orig->format->BytesPerPixel != 4) {
-                fprintf(stderr, "snow: orig surface must be 32bpp\n");
-                abort();
-        }
-	if (dest->format->BytesPerPixel != 4) {
-                fprintf(stderr, "snow: dest surface must be 32bpp\n");
-                abort();
-        }
-        if (flakes == NULL) {
-                flakes = malloc(sizeof(struct flake) * amount);
-                if (!flakes)
-                        fb__out_of_memory();
-                for (i = 0; i < amount; i++) {
-                        flakes[i].x = -1;
-                }
-        }
+	static struct flake * flakes = NULL;
+	int i, amount = 200;
+	double wideness = 2.0, y_speed = 0.2, moving_speed = 0.1;
+	static int new_generated = 0;
+	double a, fore_a, x_flake, y_flake, dx, dy;
+	int r, g, b, fore_r, fore_g, fore_b, x_, y_, y__;
+	Uint8 r_, g_, b_, a_;
+	if (orig->format->BytesPerPixel == 1)
+	{
+		fprintf(stderr, "snow: orig surface must not have a palette\n");
+		abort();
+	}
+	if (dest->format->BytesPerPixel == 1)
+	{
+		fprintf(stderr, "snow: dest surface must not have a palette\n");
+		abort();
+	}
+	if (flakes == NULL) {
+		flakes = malloc(sizeof(struct flake) * amount);
+		if (!flakes)
+			fb__out_of_memory();
+		for (i = 0; i < amount; i++)
+		{
+			flakes[i].x = -1;
+		}
+	}
 	myLockSurface(orig);
 	myLockSurface(dest);
-        for (y = 0; y < dest->h; y++) {
-                memcpy(dest->pixels + y*dest->pitch, orig->pixels + y*orig->pitch, orig->pitch);
-        }
-        for (i = 0; i < amount; i++) {
-                if (flakes[i].x == -1) {
-                        if (new_generated == 0) {
-                                // gen a new one
-                                flakes[i].x = wideness + rand_(dest->w - 3 - wideness*2) - 1;
-                                flakes[i].y = -2;
-                                flakes[i].sinpos = 100.0 * rand() / RAND_MAX;
-                                flakes[i].sincoeff = 0.3 + 0.7 * rand() / RAND_MAX;
-                                flakes[i].y_speed = 0.1 + y_speed * rand() / RAND_MAX;
-                                flakes[i].wideness = wideness/2 + wideness/2 * rand() / RAND_MAX;
-                                flakes[i].opacity = 1;
-                                new_generated = counter_for_new_flake;
-                                if (counter_for_new_flake > 50)
-                                        counter_for_new_flake -= 2;
-                        } else {
-                                new_generated--;
-                        }
-                        continue;
+	for (x = 0; x < dest->w; x++)
+	{
+		for (y = 0; y < dest->h; y++)
+		{
+			get_pixel(orig, x, y, &r_, &g_, &b_, &a_);
+			set_pixel(dest, x, y, r_, g_, b_, a_);
+		}
+	}
+	for (i = 0; i < amount; i++)
+	{
+		if (flakes[i].x == -1)
+		{
+			if (new_generated == 0)
+			{
+				// gen a new one
+				flakes[i].x        = wideness + rand_(dest->w - 3 - wideness*2) - 1;
+				flakes[i].y        = -2;
+				flakes[i].sinpos   = 100.0                   * rand() / RAND_MAX;
+				flakes[i].sincoeff = 0.3        + 0.7        * rand() / RAND_MAX;
+				flakes[i].y_speed  = 0.1        + y_speed    * rand() / RAND_MAX;
+				flakes[i].wideness = wideness/2 + wideness/2 * rand() / RAND_MAX;
+				flakes[i].opacity  = 1;
+				new_generated      = counter_for_new_flake;
+				if (counter_for_new_flake > 50)
+					counter_for_new_flake -= 2;
+			}
+			else
+			{
+				new_generated--;
+			}
+			continue;
+		}
+		// render existing flakes
+		x_flake = flakes[i].x + sin(flakes[i].sinpos * flakes[i].sincoeff) * flakes[i].wideness;
+		y_flake = flakes[i].y;
+		x_      = floor(x_flake);
+		y_      = floor(y_flake);
+		dx      = 1 - (x_flake - x_);
+		dy      = 1 - (y_flake - y_);
+		// collision with background?
+		get_pixel(orig, x_, y_ + 1, &r_, &g_, &b_, &a_);
+		if (y_ >= 0)
+		{
+			if (a_ > 191 + rand_(64))
+			{
+				get_pixel(orig, x_ + 3, y_ + 1, &r_, &g_, &b_, &a_);
+				if(a_ > 191 + rand_(64))
+					flakes[i].x = -1;
+			}
+		}
+		for (x = 0; x < orig_flake_w; x++)
+		{
+			y__ = 0;
+			for (y = MAX(0, -y_); y < orig_flake_h; y++)
+			{
+				get_pixel(dest, x_ + x, MAX(0, y_) + y__, &r_, &g_, &b_, &a_);
+				// 1. bilinear filter orig_flake for smooth subpixel movement
+				Uint32 *A = orig_flake + x     +  y      * orig_flake_pitch;
+				Uint32 *B = orig_flake + x + 1 +  y      * orig_flake_pitch;
+				Uint32 *C = orig_flake + x     + (y + 1) * orig_flake_pitch;
+				Uint32 *D = orig_flake + x + 1 + (y + 1) * orig_flake_pitch;
+				fore_a = (geta(A) * ( 1 - dx ) + geta(B) * dx) * ( 1 - dy ) + (geta(C) * ( 1 - dx ) + geta(D) * dx) * dy;
+				if (fore_a == 0)
+				{
+					// fully transparent, nothing to do
+					y__++;
+					continue;
+				}
 
-                }
+				if (fore_a == 255) {
+					// fully opaque, optimized
+					fore_r = (getr(A) * ( 1 - dx ) + getr(B) * dx) * ( 1 - dy ) + (getr(C) * ( 1 - dx ) + getr(D) * dx) * dy;
+					fore_g = (getg(A) * ( 1 - dx ) + getg(B) * dx) * ( 1 - dy ) + (getg(C) * ( 1 - dx ) + getg(D) * dx) * dy;
+					fore_b = (getb(A) * ( 1 - dx ) + getb(B) * dx) * ( 1 - dy ) + (getb(C) * ( 1 - dx ) + getb(D) * dx) * dy;
+				}
+				else
+				{
+					// not fully opaque, means A B C or D was not fully opaque, need to weight channels with
+					fore_r = ( (getr(A) * geta(A) * ( 1 - dx ) + getr(B) * geta(B) * dx) * ( 1 - dy ) + (getr(C) * geta(C) * ( 1 - dx ) + getr(D) * geta(D) * dx) * dy ) / fore_a;
+					fore_g = ( (getg(A) * geta(A) * ( 1 - dx ) + getg(B) * geta(B) * dx) * ( 1 - dy ) + (getg(C) * geta(C) * ( 1 - dx ) + getg(D) * geta(D) * dx) * dy ) / fore_a;
+					fore_b = ( (getb(A) * geta(A) * ( 1 - dx ) + getb(B) * geta(B) * dx) * ( 1 - dy ) + (getb(C) * geta(C) * ( 1 - dx ) + getb(D) * geta(D) * dx) * dy ) / fore_a;
+				}
 
-                // render existing flakes
-                x_flake = flakes[i].x + sin(flakes[i].sinpos*flakes[i].sincoeff)*flakes[i].wideness;
-                y_flake = flakes[i].y;
-                x_ = floor(x_flake);
-                y_ = floor(y_flake);
-                dx = 1 - (x_flake - x_);
-                dy = 1 - (y_flake - y_);
-                // collision with background?
-                orig_ptr = orig->pixels + x_ * Bpp + (y_ + 1) * orig->pitch;
-                if (y_ >= 0) {
-                        if (geta(orig_ptr) > 191 + rand_(64)
-                            && geta(orig_ptr + 3 * Bpp) > 191 + rand_(64)) {
-                                flakes[i].x = -1;
-                        }
-                }
-                for (x = 0; x < orig_flake_w; x++) {
-                        ptr = dest->pixels + (x_ + x) * Bpp + MAX(0, y_) * dest->pitch;
-                        orig_ptr = orig->pixels + (x_ + x) * Bpp + MAX(0, y_) * orig->pitch;
-                        for (y = MAX(0, -y_); y < orig_flake_h; y++) {
-                                // 1. bilinear filter orig_flake for smooth subpixel movement
-                                Uint32 *A = orig_flake + x + y*orig_flake_pitch;
-                                Uint32 *B = orig_flake + (x+1) + y*orig_flake_pitch;
-                                Uint32 *C = orig_flake + x + (y+1)*orig_flake_pitch;
-                                Uint32 *D = orig_flake + (x+1) + (y+1)*orig_flake_pitch;
-                                fore_a = (geta(A) * ( 1 - dx ) + geta(B) * dx) * ( 1 - dy ) + (geta(C) * ( 1 - dx ) + geta(D) * dx) * dy;
-                                if (fore_a == 0) {
-                                        // fully transparent, nothing to do
-                                        ptr += dest->pitch;
-                                        orig_ptr += orig->pitch;
-                                        continue;
-                                }
+				fore_a *= flakes[i].opacity;
 
-                                if (fore_a == 255) {
-                                        // fully opaque, optimized
-                                        fore_r = (getr(A) * ( 1 - dx ) + getr(B) * dx) * ( 1 - dy ) + (getr(C) * ( 1 - dx ) + getr(D) * dx) * dy;
-                                        fore_g = (getg(A) * ( 1 - dx ) + getg(B) * dx) * ( 1 - dy ) + (getg(C) * ( 1 - dx ) + getg(D) * dx) * dy;
-                                        fore_b = (getb(A) * ( 1 - dx ) + getb(B) * dx) * ( 1 - dy ) + (getb(C) * ( 1 - dx ) + getb(D) * dx) * dy;
-                                } else {
-                                        // not fully opaque, means A B C or D was not fully opaque, need to weight channels with
-                                        fore_r = ( (getr(A) * geta(A) * ( 1 - dx ) + getr(B) * geta(B) * dx) * ( 1 - dy ) + (getr(C) * geta(C) * ( 1 - dx ) + getr(D) * geta(D) * dx) * dy ) / fore_a;
-                                        fore_g = ( (getg(A) * geta(A) * ( 1 - dx ) + getg(B) * geta(B) * dx) * ( 1 - dy ) + (getg(C) * geta(C) * ( 1 - dx ) + getg(D) * geta(D) * dx) * dy ) / fore_a;
-                                        fore_b = ( (getb(A) * geta(A) * ( 1 - dx ) + getb(B) * geta(B) * dx) * ( 1 - dy ) + (getb(C) * geta(C) * ( 1 - dx ) + getb(D) * geta(D) * dx) * dy ) / fore_a;
-                                }
+				// 2. alpha composite with existing background (other flakes, alpha border of logo)
+				a = fore_a + (255 - fore_a) * a_ / 255;
+				if (a == 0)
+					set_pixel(dest, x_ + x, MAX(0, y_) + y__, 0, 0, 0, 0);
+				else
+				{
+					if (a_ == 0) {
+						r = fore_r;
+						g = fore_g;
+						b = fore_b;
+					} 
+					else
+					{
+						r = (fore_r * fore_a + ((r_ * (255 - fore_a) * a_) / 255)) / a;
+						g = (fore_g * fore_a + ((g_ * (255 - fore_a) * a_) / 255)) / a;
+						b = (fore_b * fore_a + ((b_ * (255 - fore_a) * a_) / 255)) / a;
+					}
+					if (flakes[i].x == -1)
+						set_pixel(orig, x_ + x, MAX(0, y_) + y__, (Uint8)r, (Uint8)g, (Uint8)b, (Uint8)a);
 
-                                fore_a *= flakes[i].opacity;
-
-                                // 2. alpha composite with existing background (other flakes, alpha border of logo)
-                                back_a = geta(ptr);
-                                a = fore_a + (255 - fore_a) * back_a / 255;
-                                if (a == 0) {
-                                        * ( (Uint32*) ptr ) = 0;
-                                } else {
-                                        if (back_a == 0) {
-                                                r = fore_r;
-                                                g = fore_g;
-                                                b = fore_b;
-                                        } else {
-                                                r = (fore_r * fore_a + ((getr(ptr) * (255 - fore_a) * back_a) / 255)) / a;
-                                                g = (fore_g * fore_a + ((getg(ptr) * (255 - fore_a) * back_a) / 255)) / a;
-                                                b = (fore_b * fore_a + ((getb(ptr) * (255 - fore_a) * back_a) / 255)) / a;
-                                        }
-//                                        if (fore_a>255 ||fore_r>255||fore_g>255||fore_b>255||a>255||r>255||g>255||b>255){
-//                                                printf("%dx%d (at %dx%d, d%fx%f):\n", x, y, x_, y_, dx, dy);
-//                                                printf("\tA = %d %d %d %d\n", geta(A), getr(A), getg(A), getb(A));
-//                                                printf("\tB = %d %d %d %d\n", geta(B), getr(B), getg(B), getb(B));
-//                                                printf("\tC = %d %d %d %d\n", geta(C), getr(C), getg(C), getb(C));
-//                                                printf("\tD = %d %d %d %d\n", geta(D), getr(D), getg(D), getb(D));
-//                                                printf("\t\t=> %f %d %d %d\n", fore_a, fore_r, fore_g, fore_b);
-//                                                printf("\talpha with existing %d %d %d %d\n", geta(ptr), getr(ptr), getg(ptr), getb(ptr));
-//                                                printf("\t\t=> %f %d %d %d\n", a, r, g, b); }
-//                                                abort();
-//                                        }
-                                        if (flakes[i].x == -1) {
-                                                * ( orig_ptr + Rdec ) = r;
-                                                * ( orig_ptr + Gdec ) = g;
-                                                * ( orig_ptr + Bdec ) = b;
-                                                * ( orig_ptr + Adec ) = a;
-                                        }
-                                        * ( ptr + Rdec ) = r;
-                                        * ( ptr + Gdec ) = g;
-                                        * ( ptr + Bdec ) = b;
-                                        * ( ptr + Adec ) = a;
-                                }
-                                ptr += dest->pitch;
-                                orig_ptr += orig->pitch;
-                        }
-                }
-                flakes[i].sinpos += moving_speed;
-                flakes[i].y += flakes[i].y_speed;
-                if (flakes[i].y > dest->h - 22)
-                        flakes[i].opacity = (double)(dest->h - flakes[i].y - 2)/20;
-                if (flakes[i].y >= dest->h - 4)
-                        flakes[i].x = -1;
-        }
+					set_pixel(dest, x_ + x, MAX(0, y_) + y__, (Uint8)r, (Uint8)g, (Uint8)b, (Uint8)a);
+				}
+				y__++;
+			}
+		}
+		flakes[i].sinpos += moving_speed;
+		flakes[i].y      += flakes[i].y_speed;
+		if (flakes[i].y > dest->h - 22)
+			flakes[i].opacity = (double)(dest->h - flakes[i].y - 2)/20;
+		if (flakes[i].y >= dest->h - 4)
+			flakes[i].x = -1;
+	}
 	myUnlockSurface(orig);
 	myUnlockSurface(dest);
 }
@@ -1654,12 +1676,12 @@ effect(s, img)
 			store_effect(s, img);
 		else if (randvalue == 3 || randvalue == 4 || randvalue == 5)
 			plasma_effect(s, img);
-                else if (randvalue == 6)
+		else if (randvalue == 6)
 			circle_effect(s, img);
 		else if (randvalue == 7)
 			bars_effect(s, img);
 		else
-                        squares_effect(s, img);
+			squares_effect(s, img);
 
 int
 get_synchro_value()

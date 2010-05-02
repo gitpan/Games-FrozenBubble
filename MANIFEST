@@ -1,10 +1,10 @@
 AUTHORS
+bin/fb-server
 bin/frozen-bubble
 bin/frozen-bubble-editor
 Build.PL
 Changes
 COPYING
-inc/Local/Games/FrozenBubble/Build.pm
 inc/My/Builder.pm
 INSTALL
 lib/Games/FrozenBubble.pm
@@ -19,14 +19,8 @@ lib/Games/FrozenBubble/Stuff.pm
 lib/Games/FrozenBubble/Symbols.pm
 MANIFEST			This list of files
 MANIFEST.SKIP
-META.yml
-NEWS
-patch
-PORT_TODO
 README
-server/.depend
 server/AUTHORS
-server/fb-server
 server/fb-server.c
 server/fb-server.o
 server/game.c
@@ -3277,14 +3271,12 @@ share/locale/sl.po
 share/locale/sv.po
 share/locale/tr.po
 share/locale/zh_CN.po
-share/man/man6/frozen-bubble-editor.6
-share/man/man6/frozen-bubble.6
 share/snd/applause.ogg
 share/snd/cancel.ogg
 share/snd/chatted.ogg
 share/snd/destroy_group.ogg
 share/snd/frozen-mainzik-1p.ogg
-share/snd/frozen-mainzik-2p.xm
+share/snd/frozen-mainzik-2p.ogg
 share/snd/hurry.ogg
 share/snd/introzik.ogg
 share/snd/launch.ogg
@@ -3301,7 +3293,5 @@ share/snd/snore.ogg
 share/snd/stick.ogg
 share/snd/typewriter.ogg
 t/001_load.t
-TIPS
-TODO
 typemap
-VERSION
+META.yml

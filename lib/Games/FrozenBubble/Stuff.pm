@@ -1,26 +1,3 @@
-#*****************************************************************************
-#
-#                          Frozen-Bubble
-#
-# Copyright (c) 2000 - 2008 The Frozen-Bubble Team
-#
-# Originally sponsored by Mandriva <http://www.mandriva.com/>
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License version 2, as
-# published by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-#
-#******************************************************************************
-
 package Games::FrozenBubble::Stuff;
 
 use Games::FrozenBubble::CStuff;
@@ -30,7 +7,7 @@ use File::ShareDir qw(dist_dir);
 
 Locale::Maketext::Simple->import(Path => dist_dir('Games-FrozenBubble')."/locale", Style => 'gettext', Export => 'gettext');
 ###passing language to Locale::Maketext::Simple
-my ($lang) = split(':', $ENV{LANGUAGE}); 
+my ($lang) = split(':', $ENV{LANGUAGE});
 gettext_lang($lang);
 
 use vars qw(@ISA @EXPORT $FPATH $FLPATH $FBHOME $FBLEVELS $colourblind %POS_1P %POS_2P %POS_MP $BUBBLE_SIZE $ROW_SIZE
@@ -159,7 +136,7 @@ $POS_2P{rp1} = $POS_2P{p2};  #- in net/lan 2p mode, use bigger graphics and posi
 	    centerpanel => { x => 149, 'y' => 190 },
 	  );
 
-$FBHOME = "$ENV{HOME}/.frozen-bubble";
+$FBHOME   = "$ENV{HOME}/.frozen-bubble";
 $FBLEVELS = "$FBHOME/levels";
 migrate_resource_files();
 
@@ -215,8 +192,25 @@ sub fold_left(&@) {
     foreach $::b (@l) { $::a = &$f() }
     $::a
 }
-sub output { my $f = shift; local *F; open F, ">$f" or die "output in file $f failed: $!\n"; print F foreach @_; }
-sub append_to_file { my $f = shift; local *F; open F, ">>$f" or die "output in file $f failed: $!\n"; print F foreach @_; 1 }
+sub output {
+	my $f = shift;
+	local *F;
+	chmod(0666, $f) if -e $f;
+	open(F, ">$f") or die "output in file $f failed: $!\n";
+	print F foreach @_;
+	close(F);
+	chmod(0666, $f);
+}
+sub append_to_file {
+	my $f = shift;
+	local *F;
+	chmod(0666, $f) if -e $f;
+	open(F, ">>$f") or die "output in file $f failed: $!\n";
+	print F foreach @_;
+	close(F);
+	chmod(0666, $f);
+	1
+}
 sub min { my $n = shift; $_ < $n and $n = $_ foreach @_; $n }
 sub max { my $n = shift; $_ > $n and $n = $_ foreach @_; $n }
 sub backtrace {
@@ -367,3 +361,26 @@ sub migrate_resource_files {
 }
 
 1;
+
+__END__
+
+=encoding UTF-8
+
+=head1 Frozen-Bubble
+
+Copyright © 2000 - 2008 The Frozen-Bubble Team
+
+Originally sponsored by Mandriva <http://www.mandriva.com/>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2, as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.

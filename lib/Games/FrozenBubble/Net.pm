@@ -1,25 +1,3 @@
-#*****************************************************************************
-#
-#                          Frozen-Bubble
-#
-# Copyright (c) 2004 Guillaume Cottenceau
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License version 2, as
-# published by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-#
-#
-#******************************************************************************
-
 package Games::FrozenBubble::Net;
 
 use strict;
@@ -27,6 +5,7 @@ use IO::Socket;
 use Fcntl;
 use Errno qw(:POSIX);
 use POSIX qw(uname);
+
 use Time::HiRes qw(gettimeofday sleep);
 use Games::FrozenBubble::Stuff;
 
@@ -119,15 +98,21 @@ sub readline_() {
         alarm 5;  #- in seconds
         while ($results !~ /\n/) {
             my $buf;
-            my $bytes = sysread($sock, $buf, 1);
+
+			if($^O eq 'MSWin32' && !defined IO::Select->new($sock)->can_read(0.00001)) {
+				sleep($ping/1000/3);
+				next;
+			}
+
+			my $bytes = sysread($sock, $buf, 1);
             if (!defined($bytes)) {
-                if ($! == EAGAIN) {
+                if (0 + $! == EAGAIN) {
                     sleep($ping/1000/3);
                 } elsif ($! == ECONNRESET) {
                     disconnect();
                     return $results;
                 } else {
-                    print STDERR "Oops, system error: $!\n";
+                    printf STDERR "Oops, system error: " .(0+$!). " at line %d, %s\n", __LINE__, $^E;
                     return undef;
                 }
             } elsif ($bytes == 0) {
@@ -156,16 +141,18 @@ sub readline_ifdata() {
         return undef;
     }
 
+	return undef if $^O eq 'MSWin32' && !defined IO::Select->new($sock)->can_read(0.00001);
+
     my $buf;
-    my $bytes = sysread($sock, $buf, 1);
+	my $bytes = sysread($sock, $buf, 1);
     if (!defined($bytes)) {
-        if ($! == EAGAIN) {
+        if (0 + $! == EAGAIN) { # nothing there to read
             return undef;
-        } elsif ($! == ECONNRESET) {
+        } elsif (0 + $! == ECONNRESET) {
             disconnect();
             return undef;
         } else {
-            print STDERR "Oops, system error: $!\n";
+            printf STDERR "Oops, system error: " .(0+$!). " at line %d, %s\n", __LINE__, $^E;
             return undef;
         }
     } elsif ($bytes == 0) {
@@ -348,17 +335,11 @@ sub connect {
         $ping = sprintf("%.1f", sum(@pings)/@pings);
     }
 
-    my $flags = $sock->fcntl(F_GETFL, 0);
-    if (!$flags) {
-        disconnect();
-        return { failure => 'Server is mad' };
-    }
-
-    $flags = $sock->fcntl(F_SETFL, $flags|O_NONBLOCK);
-    if (!$flags) {
-        disconnect();
-        return { failure => 'Server is crazy' };
-    }
+    #BEWARE non-blocking sockets work on Win32 only with IO-1.24 or higher
+	# http://www.codeguru.com/forum/showthread.php?t=468281
+	# http://perldoc.perl.org/IO/Select.html
+	$sock->blocking(0);
+	return { failure => 'Cannot set unblocking '.(0+$!) } if 0+$!;
 
     $current_host = $host;
     $current_port = $port;
@@ -503,6 +484,8 @@ sub grecv() {
         return @msg;
     }
 
+	return @msg if $^O eq 'MSWin32' && !defined IO::Select->new($sock)->can_read(0.00001);
+
     my $buf;
     my $bytes = sysread($sock, $buf, 1024);
     if (!defined($bytes)) {
@@ -511,10 +494,10 @@ sub grecv() {
         } elsif ($! == ECONNRESET) {
             disconnect();
             return;
-        } else {
-            print STDERR "Oops, system error: $!\n";
-            return;
-        }
+		} else {
+			printf STDERR "Oops, system error: " .(0+$!). " at line %d, %s\n", __LINE__, $^E;
+			return undef;
+		}
     } elsif ($bytes == 0) {
         disconnect();
         return;
@@ -575,5 +558,25 @@ sub grecv_get1msg {
     }
 }
 
-
 1;
+
+__END__
+
+=encoding UTF-8
+
+=head1 Frozen-Bubble
+
+Copyright © 2004 Guillaume Cottenceau
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2, as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
