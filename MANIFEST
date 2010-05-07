@@ -1,3 +1,4 @@
+0001-Better-lib.patch
 AUTHORS
 bin/fb-server
 bin/frozen-bubble
@@ -8,6 +9,7 @@ COPYING
 inc/My/Builder.pm
 INSTALL
 lib/Games/FrozenBubble.pm
+lib/Games/FrozenBubble/.Config.pm.swp
 lib/Games/FrozenBubble/Config.pm
 lib/Games/FrozenBubble/CStuff.pm
 lib/Games/FrozenBubble/CStuff.xs
@@ -19,7 +21,10 @@ lib/Games/FrozenBubble/Stuff.pm
 lib/Games/FrozenBubble/Symbols.pm
 MANIFEST			This list of files
 MANIFEST.SKIP
+META.yml
+PL
 README
+server/.depend
 server/AUTHORS
 server/fb-server.c
 server/fb-server.o
@@ -3294,4 +3299,3 @@ share/snd/stick.ogg
 share/snd/typewriter.ogg
 t/001_load.t
 typemap
-META.yml
