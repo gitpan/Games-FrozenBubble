@@ -1,4 +1,3 @@
-0001-Better-lib.patch
 AUTHORS
 bin/fb-server
 bin/frozen-bubble
@@ -6,10 +5,10 @@ bin/frozen-bubble-editor
 Build.PL
 Changes
 COPYING
+HISTORY
 inc/My/Builder.pm
 INSTALL
 lib/Games/FrozenBubble.pm
-lib/Games/FrozenBubble/.Config.pm.swp
 lib/Games/FrozenBubble/Config.pm
 lib/Games/FrozenBubble/CStuff.pm
 lib/Games/FrozenBubble/CStuff.xs
@@ -22,7 +21,6 @@ lib/Games/FrozenBubble/Symbols.pm
 MANIFEST			This list of files
 MANIFEST.SKIP
 META.yml
-PL
 README
 server/.depend
 server/AUTHORS

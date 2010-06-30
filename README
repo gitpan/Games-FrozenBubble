@@ -1,63 +1,79 @@
 =encoding UTF-8
 
+Games-FrozenBubble version 2.2.1_01 is Copyright © 2000-2010, The Frozen-Bubble Team
+
 =head1 NAME
 
-README - Frozen-Bubble
+README - basic information for users prior to downloading
 
-Copyright © 2000-2008 The Frozen-Bubble Team.
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-version 2, as published by the Free Software Foundation.
+=head1 INSTALLATION
 
-Check the AUTHORS file for the full story of who did what.
+=head2 system-wide installation
 
-L<http://www.frozen-bubble.org/>
+    perl Build.PL
+    ./Build
+    ./Build test
+    sudo ./Build install
 
-Notice: the following is an historic explanation of Frozen-Bubble
-written in 2002 which is kept here for information:
+=head2 installation in a private directory
 
-This game began when I, as a packager for Mandrakesoft L<http://mandrakesoft.com/> and
-amateur of the Perl language (which I discovered reading the
-source code of Mandrake's graphical installer, DrakX L<http://mandrakelinux.com/DrakX/>),
-discovered that a crazy guy (David J. Goehrig) had had the mysterious idea to
-bind the functions of the C low-level graphical library SDL L<http://libsdl.org/>
-for the Perl language, `sdlpl' L<http://sdlperl.org/>.
+    perl Build.PL INSTALL_BASE=~/modules_prefix
+    ./Build
+    ./Build test
+    ./Build install
 
-What an amazing idea, try to make Perl, an interpreted
-'scripting' language, (e.g. something considered by most as
-inherently slow), talk to SDL, a C library considered as the
-leader gateway to fast multimedia under Linux (among others
-O.S.), and hope to keep good performance?
+Do not forget to add F<$HOME/modules_prefix/lib/perl5> to your C<@INC>, see
+L<perlfaq8/"How do I add a directory to my include path (@INC) at runtime?">.
 
-Another time, Perl is here to surprise us by its (reasonably)
-good performance (compared to what it actually computes), and
-make us realize that what is time-consuming in most multimedia
-programs is, bingo, multimedia operations such as blitting images
-and so on.
 
-Of course, if you notice, you will see graphical effects in the
-game when a new level is displayed. That is CPU-intensive, and is
-performed through some C code, compiled to be called by Perl. Yet
-all the rest is done by Perl, and I can use higher-level lists
-operations, efficient functional-style programming, and other
-enjoyable things; I could program the whole thing in roughly 15
-to 30 days of work; and the whole program is only 1500 lines!
-And it never segfaults :-)...
+=head1 DEPENDENCIES
 
-I'd like to thank a lot the great guys who made the artistic part
-of this game possible: Ayo the famous french pinguin designer L<http://73lab.com/>,
-Amaury the bubbles designer, and Matthias our fine guitarist, who
-all managed to accept (and enjoy ;p) working under more strict
-conditions that what they're used to (because this was part of a
-bigger project, it logically restricted freedom in their art).
-All L<http://linuxfr.org/> readers knew that Ayo had a real talent,
-yet he showed he could do much more than banners and wallpapers.
-Regarding Matthias, as I'm a fan since 1997 I was confident he
-could write marvellous songs (I was not disappointed), and I
-discovered he could give me high quality sound effects as well!
-It's real great to see that together we could produce a game I'm
-very proud of.
+=head2 Pango development files
 
-gc,
-Sun Jan 27 22:17:10 2002
+C<libpango1-dev> and C<pkg-config> are required.
+
+    sudo apt-get install libpango1-dev
+    sudo zypper install pango-devel pkg-config
+
+Users of Strawberry Perl for Windows need not worry.
+
+=head2 Alien::SDL
+
+=head3 Unix/Linux/Macs
+
+You may need the following packages:
+
+    libpng-dev libvorbis-dev x11proto-xext-dev libxft-dev               # deb
+    libpng-devel libvorbis-devel xorg-x11-libXext-devel xorg-x11-devel  # rpm
+
+During configuration of C<Alien::SDL>, it is B<critical> to select Pango support.
+
+=head2 Perl modules
+
+The other numerous module dependencies are listed in F<META.yml> (online at
+L<http://search.cpan.org/dist/Games-FrozenBubble/META.yml>).
+
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright © 2000-2010, The Frozen-Bubble Team
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2, as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+=head2 Disclaimer of warranty
+
+This library is distributed in the hope that it will be useful, but without
+any warranty; without even the implied warranty of merchantability or fitness
+for a particular purpose.

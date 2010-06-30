@@ -17,13 +17,13 @@ build_requires:
   Locale::Maketext::Simple: 0
   Math::Trig: 0
   Module::Build: 0.36
-  SDL: 2.405
+  SDL: 2.500_1
   Time::HiRes: 0
   autodie: 0
   parent: 0
   perl: 5.008
 configure_requires:
-  Alien::SDL: 1.403
+  Alien::SDL: 1.404
   Data::Dumper: 0
   Errno: 0
   ExtUtils::CBuilder: 0
@@ -56,7 +56,7 @@ no_index:
 provides:
   Games::FrozenBubble:
     file: lib/Games/FrozenBubble.pm
-    version: 2.202
+    version: v2.2.1_2
   Games::FrozenBubble::CStuff:
     file: lib/Games/FrozenBubble/CStuff.pm
   Games::FrozenBubble::Config:
@@ -82,18 +82,19 @@ requires:
   Fcntl: 0
   File::Glob: 0
   File::ShareDir: 1.00
+  File::Which: 0
   Getopt::Long: 0
   IO::Socket: 1.24
   Locale::Maketext::Simple: 0
   Math::Trig: 0
   POSIX: 0
-  SDL: 2.405
+  SDL: 2.500_1
   SDLx::TTF: 0
   Time::HiRes: 0
   parent: 0
   perl: 5.008
 resources:
   bugtracker: http://sdlperl.ath.cx/projects/SDLPerl/query?component=FrozenBubble
-  license: http://opensource.org/licenses/gpl-2.0.php
+  license: http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
   repository: http://github.com/kthakore/frozen-bubble
-version: 2.202
+version: v2.2.1_2

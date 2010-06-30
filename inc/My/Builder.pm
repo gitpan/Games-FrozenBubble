@@ -88,16 +88,16 @@ sub ACTION_messages {
 }
 
 sub ACTION_server {
-    if($^O =~ /(w|W)in/ && $^O !~ /darwin/)
+    if($^O =~ /(w|W)in/ or $^O =~ /darwin/)
     {
-	print STDERR "###Cannot build fb-server on windows \n";
+        print STDERR "###Cannot build fb-server on windows or darwin need glib\n";
 
-	return;
+        return;
     }
     my ($self) = @_;
     my $server_directory = 'server';
     my $otarget          = 'fb-server';
-
+	return if (-e 'bin/'.$otarget );
     # CBuilder doesn't take shell quoting into consideration,
     # so the -DVERSION macro does not work like in the former Makefile.
     # Instead, I'll just preprocess the two files with perl.

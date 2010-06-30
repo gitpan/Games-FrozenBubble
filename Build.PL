@@ -10,15 +10,14 @@ use My::Builder;
 use ExtUtils::CBuilder qw();
 
 my $prefix = Alien::SDL->config('prefix');
-my $cflags = Alien::SDL->config('cflags');
-$cflags = '-I'
+my $cflags = '-I'
   . File::Spec->catfile( $prefix, 'include' )
   ;
 $cflags .= ' -fnested-functions' if $^O =~ /darwin/;
 ###!!! this looks strange, you perhaps meant "$cflags .= ..."
 ###!!! I intended Alien::SDL to add -I$prefix/include automatically, please tell me when it does not work (kmx)
 my $devnull = File::Spec->devnull();
-
+my @cflags =  ExtUtils::CBuilder->new->split_like_shell( $cflags );
 my @linkers = ( ExtUtils::CBuilder->new->split_like_shell( Alien::SDL->config('libs', '-lSDL_mixer', '-lSDL_Pango') ) );
 push @linkers, '-liconv'
   if $^O =~ /win/i;    ###!!! really only Win needs this? ; BEWARE this matches also 'darwin', 'cygwin'!!!!
@@ -41,7 +40,7 @@ My::Builder->new(
     ],
     dist_abstract  => 'Puzzle with Bubbles', # taken from openSUSE rpm spec file
     dynamic_config => 1,
-    extra_compiler_flags => [ $cflags ],
+    extra_compiler_flags => \@cflags ,
     extra_linker_flags   => \@linkers,
     license              => 'gpl2',
     meta_merge           => {
@@ -61,9 +60,9 @@ My::Builder->new(
         'IO::Socket'                => '1.24', # part od IO distribution
         'Math::Trig'                => 0,
         'parent'                    => 0,
-        'Alien::SDL'                => '1.403',
+        'Alien::SDL'                => '1.404',
         'SDL'                       => '2.405',
-	'ExtUtils::CBuilder'	    => 0,
+        'ExtUtils::CBuilder'        => 0,
         'Time::HiRes'               => 0,
         'Locale::Maketext::Simple'  => 0,
         'Module::Build'             => '0.36', # for share_dir
@@ -85,7 +84,7 @@ My::Builder->new(
         'Math::Trig'                => 0,
         'parent'                    => 0,
         'Alien::SDL'                => '1.403',
-        'SDL'                       => '2.405',
+        'SDL'                       => '2.500_1',
         'Time::HiRes'               => 0,
         'Locale::Maketext::Simple'  => 0,
         'Module::Build'             => '0.36', # for share_dir
@@ -112,10 +111,11 @@ My::Builder->new(
         'Math::Trig'                => 0,
         'parent'                    => 0,
         'Alien::SDL'                => '1.403',
-        'SDL'                       => '2.405',
+        'SDL'                       => '2.500_1',
         'Time::HiRes'               => 0,
         'Locale::Maketext::Simple'  => 0,
         'File::Glob'                => 0,
         'SDLx::TTF'                 => 0,
+	'File::Which'		    => 0,
     },
 )->create_build_script;

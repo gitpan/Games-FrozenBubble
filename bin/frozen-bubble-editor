@@ -26,13 +26,13 @@
 #
 # *****************************************************************************
 
-use SDL::App;
-use File::ShareDir qw(dist_dir);
+use SDLx::App;
 use Games::FrozenBubble::Config;
 use Games::FrozenBubble::Stuff;
 use Games::FrozenBubble::LevelEditor;
 
-$FPATH =  dist_dir('Games-FrozenBubble');
+$FPATH = $Games::FrozenBubble::Config::FPATH;
+$FLPATH = $Games::FrozenBubble::Config::FLPATH;
 
 # command line options modified from frozen-bubble code
 local $_ = "@ARGV";
@@ -51,7 +51,7 @@ $FBLE::levelset_name = /-ls\s*(\S+)/ || /-levelset\s*(\S+)/ ? $1 : 'default-leve
 $FBLE::curr_level = /-l\s*(\d+)/ || /-level\s*(\d+)/ ? $1 : 1;
 $FBLE::command_line_fullscreen = to_bool(/-fs/ || /-fullscreen/);
 
-my $app = SDL::App->new(-icon => "$FPATH/gfx/pinguins/window_icon_penguin.png",
+my $app = SDLx::App->new(-icon => "$FPATH/gfx/pinguins/window_icon_penguin.png",
                         -title => 'frozen-bubble level editor',
                         -width => 640, -height => 480);
 
