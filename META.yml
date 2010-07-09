@@ -57,7 +57,7 @@ no_index:
 provides:
   Games::FrozenBubble:
     file: lib/Games/FrozenBubble.pm
-    version: v2.2.1
+    version: 2.210
   Games::FrozenBubble::CStuff:
     file: lib/Games/FrozenBubble/CStuff.pm
   Games::FrozenBubble::Config:
@@ -99,4 +99,4 @@ resources:
   bugtracker: http://sdlperl.ath.cx/projects/SDLPerl/query?component=FrozenBubble
   license: http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
   repository: http://github.com/kthakore/frozen-bubble
-version: v2.2.1
+version: 2.210
