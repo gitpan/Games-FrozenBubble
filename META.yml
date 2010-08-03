@@ -2,7 +2,7 @@
 abstract: 'Puzzle with Bubbles'
 author: []
 build_requires:
-  Alien::SDL: 1.409
+  Alien::SDL: 1.412
   Compress::Bzip2: 0
   Data::Dumper: 0
   Errno: 0
@@ -18,13 +18,13 @@ build_requires:
   Locale::Maketext::Simple: 0
   Math::Trig: 0
   Module::Build: 0.36
-  SDL: 2.500
+  SDL: 2.510
   Time::HiRes: 0
   autodie: 0
   parent: 0
   perl: 5.008
 configure_requires:
-  Alien::SDL: 1.409
+  Alien::SDL: 1.412
   Data::Dumper: 0
   Errno: 0
   ExtUtils::CBuilder: 0
@@ -39,7 +39,7 @@ configure_requires:
   Locale::Maketext::Simple: 0
   Math::Trig: 0
   Module::Build: 0.36
-  SDL: 2.500
+  SDL: 2.510
   Time::HiRes: 0
   autodie: 0
   parent: 0
@@ -57,7 +57,7 @@ no_index:
 provides:
   Games::FrozenBubble:
     file: lib/Games/FrozenBubble.pm
-    version: 2.210
+    version: 2.211
   Games::FrozenBubble::CStuff:
     file: lib/Games/FrozenBubble/CStuff.pm
   Games::FrozenBubble::Config:
@@ -97,6 +97,6 @@ requires:
   perl: 5.008
 resources:
   bugtracker: http://sdlperl.ath.cx/projects/SDLPerl/query?component=FrozenBubble
-  license: http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+  license: http://opensource.org/licenses/gpl-2.0.php
   repository: http://github.com/kthakore/frozen-bubble
-version: 2.210
+version: 2.211

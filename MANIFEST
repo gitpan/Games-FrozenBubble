@@ -21,7 +21,6 @@ MANIFEST			This list of files
 MANIFEST.SKIP
 META.yml
 README
-server/.depend
 server/AUTHORS
 server/fb-server.c
 server/game.c
