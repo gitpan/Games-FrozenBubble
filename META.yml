@@ -2,7 +2,7 @@
 abstract: 'Puzzle with Bubbles'
 author: []
 build_requires:
-  Alien::SDL: 1.412
+  Alien::SDL: 1.413
   Compress::Bzip2: 0
   Data::Dumper: 0
   Errno: 0
@@ -14,11 +14,12 @@ build_requires:
   File::Spec::Functions: 0
   Getopt::Long: 0
   IO::Socket: 1.24
+  IPC::System::Simple: 0
   Locale::Maketext::Extract: 0
   Locale::Maketext::Simple: 0
   Math::Trig: 0
   Module::Build: 0.36
-  SDL: 2.510
+  SDL: 2.511
   Time::HiRes: 0
   autodie: 0
   parent: 0
@@ -35,11 +36,12 @@ configure_requires:
   File::Spec::Functions: 0
   Getopt::Long: 0
   IO::Socket: 1.24
+  IPC::System::Simple: 0
   Locale::Maketext::Extract: 0
   Locale::Maketext::Simple: 0
   Math::Trig: 0
   Module::Build: 0.36
-  SDL: 2.510
+  SDL: 2.511
   Time::HiRes: 0
   autodie: 0
   parent: 0
@@ -57,7 +59,7 @@ no_index:
 provides:
   Games::FrozenBubble:
     file: lib/Games/FrozenBubble.pm
-    version: 2.211
+    version: 2.212
   Games::FrozenBubble::CStuff:
     file: lib/Games/FrozenBubble/CStuff.pm
   Games::FrozenBubble::Config:
@@ -75,7 +77,7 @@ provides:
   Games::FrozenBubble::Symbols:
     file: lib/Games/FrozenBubble/Symbols.pm
 requires:
-  Alien::SDL: 1.409
+  Alien::SDL: 1.413
   Carp: 0
   Compress::Bzip2: 0
   Data::Dumper: 0
@@ -87,11 +89,12 @@ requires:
   File::Which: 0
   Getopt::Long: 0
   IO::Socket: 1.24
+  IPC::System::Simple: 0
   Locale::Maketext::Extract: 0
   Locale::Maketext::Simple: 0
   Math::Trig: 0
   POSIX: 0
-  SDL: 2.500
+  SDL: 2.511
   Time::HiRes: 0
   parent: 0
   perl: 5.008
@@ -99,4 +102,4 @@ resources:
   bugtracker: http://sdlperl.ath.cx/projects/SDLPerl/query?component=FrozenBubble
   license: http://opensource.org/licenses/gpl-2.0.php
   repository: http://github.com/kthakore/frozen-bubble
-version: 2.211
+version: 2.212
